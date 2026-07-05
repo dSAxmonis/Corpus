@@ -9,13 +9,22 @@ import itemRoutes from './routes/items.js'
 import uploadRoutes from './routes/upload.js'
 import spaceRoutes from './routes/spaces.js'
 
+
+
+
+
+
+
 const app = express()
-const PORT = process.env.PORT || 5000
+const PORT = process.env.PORT || 5001
 
 app.use(helmet())
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'https://corpus-kappa-one.vercel.app',
+    origin: [
+      'http://localhost:5173',
+      'https://corpus-kappa-one.vercel.app',
+    ],
     credentials: true,
   })
 )
@@ -37,5 +46,8 @@ async function start() {
     console.log(`[server] running on http://localhost:${PORT}`)
   })
 }
+
+
+
 
 start()
