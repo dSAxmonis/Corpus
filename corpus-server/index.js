@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 5000
 app.use(helmet())
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'https://corpus-kappa-one.vercel.app/',
+    origin: process.env.CLIENT_URL || 'https://corpus-kappa-one.vercel.app',
     credentials: true,
   })
 )
