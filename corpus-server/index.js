@@ -21,10 +21,18 @@ const PORT = process.env.PORT || 5001
 app.use(helmet())
 app.use(
   cors({
-    origin: [
-      'http://localhost:5173',
-      'https://corpus-kappa-one.vercel.app',
-    ],
+    origin: (origin, callback) => {
+      const allowed = [
+        'http://localhost:5173',
+        'https://corpus-kappa-one.vercel.app',
+      ]
+      // allow requests with no origin (extensions, curl, mobile apps)
+      if (!origin || allowed.includes(origin) || origin.startsWith('chrome-extension://')) {
+        callback(null, true)
+      } else {
+        callback(new Error('Not allowed by CORS'))
+      }
+    },
     credentials: true,
   })
 )
