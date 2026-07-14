@@ -1,13 +1,17 @@
 import { useAuth } from '../../hooks/useAuth.js'
 import { useNavigate, useLocation } from 'react-router-dom'
 import useAuthStore from '../../store/authStore.js'
+import {
+  FiGrid, FiLink, FiFileText, FiImage, FiMessageSquare,
+  FiZap, FiCircle, FiLogOut, FiTrendingUp,
+} from 'react-icons/fi'
 
 const TYPE_FILTERS = [
-  { value: '', label: 'All entries' },
-  { value: 'link', label: 'Links' },
-  { value: 'note', label: 'Notes' },
-  { value: 'quote', label: 'Quotes' },
-  { value: 'image', label: 'Images' },
+  { value: '', label: 'All entries', icon: FiGrid },
+  { value: 'link', label: 'Links', icon: FiLink },
+  { value: 'note', label: 'Notes', icon: FiFileText },
+  { value: 'quote', label: 'Quotes', icon: FiMessageSquare },
+  { value: 'image', label: 'Images', icon: FiImage },
 ]
 
 export default function Sidebar({ activeType, onTypeChange, activeTag, onTagChange }) {
@@ -29,81 +33,114 @@ export default function Sidebar({ activeType, onTypeChange, activeTag, onTagChan
   }
 
   return (
-    <aside className="w-56 shrink-0 border-r border-line h-screen sticky top-0 hidden md:flex flex-col">
+    <aside className="w-60 shrink-0 border-r border-line/70 h-screen sticky top-0 hidden md:flex flex-col bg-paper">
 
-      <div className="px-6 h-16 flex items-center border-b border-line shrink-0">
-        <span className="font-serif text-lg">Corpus</span>
+      {/* logo */}
+      <div className="px-5 h-16 flex items-center border-b border-line/70 shrink-0">
+        <div className="w-7 h-7 rounded-md bg-ink flex items-center justify-center mr-2.5">
+          <span className="text-paper font-serif text-[14px] italic">C</span>
+        </div>
+        <span className="font-serif text-[17px]">Corpus</span>
       </div>
 
-      <nav className="px-3 py-4 flex-1 overflow-y-auto">
-        <p className="font-mono text-[10px] uppercase tracking-wider text-muted px-3 pb-2">Browse</p>
+      <nav className="px-3 py-5 flex-1 overflow-y-auto">
+        <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-muted/70 px-2.5 pb-2">Browse</p>
 
-        {TYPE_FILTERS.map(f => (
+        <div className="space-y-0.5 mb-5">
+          {TYPE_FILTERS.map(f => {
+            const active = isDashboard && activeType === f.value && !activeTag
+            return (
+              <button
+                key={f.value}
+                onClick={() => handleTypeChange(f.value)}
+                className={`w-full flex items-center gap-2.5 text-left px-2.5 py-2 rounded-lg text-[13px] transition-all ${
+                  active
+                    ? 'bg-ink text-paper shadow-sm'
+                    : 'text-ink/80 hover:bg-[#EFEDE5]'
+                }`}
+              >
+                <f.icon className={`text-[14px] shrink-0 ${active ? 'text-paper' : 'text-muted'}`} />
+                <span className="truncate">{f.label}</span>
+              </button>
+            )
+          })}
+        </div>
+
+        <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-muted/70 px-2.5 pb-2">Explore</p>
+
+        <div className="space-y-0.5">
           <button
-            key={f.value}
-            onClick={() => handleTypeChange(f.value)}
-            className={`w-full text-left px-3 py-2 rounded-sm text-[13.5px] transition-colors block mb-0.5 ${
-              isDashboard && activeType === f.value && !activeTag
-                ? 'bg-ink text-paper'
-                : 'text-ink hover:bg-[#F0EFE9]'
+            onClick={() => navigate('/drift')}
+            className={`w-full flex items-center gap-2.5 text-left px-2.5 py-2 rounded-lg text-[13px] transition-all ${
+              location.pathname === '/drift'
+                ? 'bg-ink text-paper shadow-sm'
+                : 'text-ink/80 hover:bg-[#EFEDE5]'
             }`}
           >
-            {f.label}
+            <FiZap className={`text-[14px] shrink-0 ${location.pathname === '/drift' ? 'text-paper' : 'text-accent'}`} />
+            <span>Drift</span>
           </button>
-        ))}
 
-        <div className="h-4" />
-
-        <button
-          onClick={() => navigate('/drift')}
-          className={`w-full text-left px-3 py-2 rounded-sm text-[13.5px] transition-colors flex items-center gap-2 mb-0.5 ${
-            location.pathname === '/drift' ? 'bg-ink text-paper' : 'text-ink hover:bg-[#F0EFE9]'
-          }`}
-        >
-          <span>✦</span> Drift
-        </button>
-
-        <button
-          onClick={() => navigate('/spaces')}
-          className={`w-full text-left px-3 py-2 rounded-sm text-[13.5px] transition-colors flex items-center gap-2 mb-0.5 ${
-            location.pathname.startsWith('/spaces') ? 'bg-ink text-paper' : 'text-ink hover:bg-[#F0EFE9]'
-          }`}
-        >
-          <span className="w-2.5 h-2.5 rounded-full border-2 border-accent shrink-0" />
-          Spaces
-        </button>
+          <button
+            onClick={() => navigate('/spaces')}
+            className={`w-full flex items-center gap-2.5 text-left px-2.5 py-2 rounded-lg text-[13px] transition-all ${
+              location.pathname.startsWith('/spaces')
+                ? 'bg-ink text-paper shadow-sm'
+                : 'text-ink/80 hover:bg-[#EFEDE5]'
+            }`}
+          >
+            <FiCircle className={`text-[13px] shrink-0 ${location.pathname.startsWith('/spaces') ? 'text-paper' : 'text-accent'}`} />
+            <span>Spaces</span>
+          </button>
+        </div>
       </nav>
 
-      <div className="px-4 py-4 border-t border-line shrink-0 space-y-3">
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="font-mono text-[10px] uppercase tracking-wider text-muted">Saves left</span>
-            <span className="font-mono text-[11px]" style={{ color: isEmpty ? '#DC2626' : isLow ? '#F97316' : '#171717' }}>
+      {/* credits + user */}
+      <div className="p-3 border-t border-line/70 shrink-0">
+        <div className="rounded-xl bg-[#F3F1EA] p-3 mb-2">
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-mono text-[9px] uppercase tracking-wider text-muted flex items-center gap-1">
+              <FiTrendingUp className="text-[10px]" /> Saves left
+            </span>
+            <span
+              className="font-mono text-[11px] font-medium"
+              style={{ color: isEmpty ? '#DC2626' : isLow ? '#EA580C' : '#171717' }}
+            >
               {creditsLeft}
             </span>
           </div>
-          <div className="h-1 bg-line rounded-full overflow-hidden">
+          <div className="h-1.5 bg-white rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-500"
-              style={{ width: `${creditsPercent}%`, backgroundColor: isEmpty ? '#DC2626' : isLow ? '#F97316' : '#2E5BFF' }}
+              style={{
+                width: `${creditsPercent}%`,
+                backgroundColor: isEmpty ? '#DC2626' : isLow ? '#EA580C' : '#2E5BFF',
+              }}
             />
           </div>
+          {(isLow || isEmpty) && (
+            <button
+              onClick={() => navigate('/pricing')}
+              className="w-full mt-2.5 font-mono text-[10px] uppercase tracking-wide text-white py-1.5 rounded-lg transition-colors"
+              style={{ backgroundColor: isEmpty ? '#DC2626' : '#2E5BFF' }}
+            >
+              {isEmpty ? 'Out of saves' : 'Upgrade plan'}
+            </button>
+          )}
         </div>
 
-        {(isLow || isEmpty) && (
+        <div className="flex items-center justify-between px-1">
+          {user && (
+            <p className="font-mono text-[10px] text-muted truncate flex-1">{user.name || user.email}</p>
+          )}
           <button
-            onClick={() => navigate('/pricing')}
-            className="w-full font-mono text-[11px] uppercase tracking-wide text-white py-2 rounded-sm"
-            style={{ backgroundColor: isEmpty ? '#DC2626' : '#2E5BFF' }}
+            onClick={logout}
+            className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-[#EFEDE5] text-muted hover:text-ink transition-colors shrink-0"
+            title="Sign out"
           >
-            {isEmpty ? 'Out of saves' : 'Upgrade plan'}
+            <FiLogOut className="text-[12px]" />
           </button>
-        )}
-
-        {user && <p className="font-mono text-[10px] text-muted truncate">{user.name || user.email}</p>}
-        <button onClick={logout} className="w-full text-left font-mono text-[11px] uppercase tracking-wide text-muted hover:text-ink transition-colors">
-          Sign out
-        </button>
+        </div>
       </div>
     </aside>
   )

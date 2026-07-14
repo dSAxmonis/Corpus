@@ -9,25 +9,20 @@ import itemRoutes from './routes/items.js'
 import uploadRoutes from './routes/upload.js'
 import spaceRoutes from './routes/spaces.js'
 
-
-
-
-
-
-
 const app = express()
 const PORT = process.env.PORT || 5001
+
+const ALLOWED_ORIGINS = [
+  'http://localhost:5173',
+  'https://corpus-kappa-one.vercel.app',
+]
 
 app.use(helmet())
 app.use(
   cors({
     origin: (origin, callback) => {
-      const allowed = [
-        'http://localhost:5173',
-        'https://corpus-kappa-one.vercel.app',
-      ]
-      // allow requests with no origin (extensions, curl, mobile apps)
-      if (!origin || allowed.includes(origin) || origin.startsWith('chrome-extension://')) {
+      // allow no-origin requests (curl, server-to-server) and known origins
+      if (!origin || ALLOWED_ORIGINS.includes(origin)) {
         callback(null, true)
       } else {
         callback(new Error('Not allowed by CORS'))
@@ -52,10 +47,9 @@ async function start() {
   await connectDB()
   app.listen(PORT, () => {
     console.log(`[server] running on http://localhost:${PORT}`)
+    console.log(`[server] NODE_ENV=${process.env.NODE_ENV || 'not set'}`)
+    console.log(`[server] GROQ_API_KEY is ${process.env.GROQ_API_KEY ? 'SET (' + process.env.GROQ_API_KEY.slice(0, 8) + '...)' : 'MISSING — AI tagging will not work'}`)
   })
 }
-
-
-
 
 start()

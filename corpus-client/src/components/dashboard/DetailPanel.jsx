@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { updateItem, deleteItem } from '../../api/items.js'
+import { updateItem, deleteItem, retryItemAI } from '../../api/items.js'
 import api from '../../api/axios.js'
 import SpacePicker from '../spaces/SpacePicker.jsx'
 
@@ -9,6 +9,8 @@ export default function DetailPanel({ item: initialItem, onClose, onDelete, onUp
   const [tags, setTags] = useState(initialItem?.tags || [])
   const [note, setNote] = useState(initialItem?.note || '')
   const [spaceId, setSpaceId] = useState(initialItem?.spaceId || null)
+  const [showRetry, setShowRetry] = useState(false)
+  const [retrying, setRetrying] = useState(false)
   const [tagInput, setTagInput] = useState('')
   const [addingTag, setAddingTag] = useState(false)
   const tagInputRef = useRef(null)
@@ -21,24 +23,51 @@ export default function DetailPanel({ item: initialItem, onClose, onDelete, onUp
     setTags(initialItem?.tags || [])
     setNote(initialItem?.note || '')
     setSpaceId(initialItem?.spaceId || null)
+    setShowRetry(false)
   }, [initialItem?._id])
 
   // poll for AI results if summary missing
+  // Poll while the item is genuinely still processing (status === 'pending_ai').
+  // Stop the instant the backend tells us explicitly: either summary arrived,
+  // or aiFailed is true — no more guessing based on elapsed time.
   useEffect(() => {
-    if (!item || item.summary) return
+    if (!item || item.status !== 'pending_ai') {
+      setShowRetry(!!item?.aiFailed && !item?.summary)
+      return
+    }
+    setShowRetry(false)
     pollRef.current = setInterval(async () => {
       try {
         const { data } = await api.get(`/items/${item._id}`)
-        if (data.item.summary) {
+        if (data.item.status !== 'pending_ai') {
           setItem(data.item)
           setTags(data.item.tags || [])
           onUpdate?.()
+          setShowRetry(!!data.item.aiFailed && !data.item.summary)
           clearInterval(pollRef.current)
         }
       } catch {}
-    }, 2500)
+    }, 2000)
     return () => clearInterval(pollRef.current)
-  }, [item?._id, item?.summary])
+  }, [item?._id, item?.status])
+
+  async function handleRetryAI() {
+    setRetrying(true)
+    setShowRetry(false)
+    try {
+      await retryItemAI(item._id)
+      setItem(prev => ({ ...prev, status: 'pending_ai', aiFailed: false }))
+    } catch {
+      setRetrying(false)
+      setShowRetry(true)
+    }
+  }
+
+  // once retry kicks the item back into pending_ai, the effect above
+  // will pick up polling automatically and clear `retrying` when done
+  useEffect(() => {
+    if (item?.status !== 'pending_ai') setRetrying(false)
+  }, [item?.status])
 
   useEffect(() => {
     if (addingTag) tagInputRef.current?.focus()
@@ -90,7 +119,7 @@ export default function DetailPanel({ item: initialItem, onClose, onDelete, onUp
   const isLink = item.type === 'link'
   const isImage = item.type === 'image'
   const isText = item.type === 'note' || item.type === 'quote'
-  const aiLoading = !item.summary
+  const aiLoading = item.status === 'pending_ai'
 
   return (
     <AnimatePresence>
@@ -169,7 +198,18 @@ export default function DetailPanel({ item: initialItem, onClose, onDelete, onUp
               {/* TLDR — with creating memory animation */}
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-wider text-accent mb-2">TLDR</p>
-                {aiLoading ? (
+                {showRetry ? (
+                  <div className="text-center py-3">
+                    <p className="text-[12px] text-muted mb-2">AI tagging didn't finish. Try again?</p>
+                    <button
+                      onClick={handleRetryAI}
+                      disabled={retrying}
+                      className="font-mono text-[11px] uppercase tracking-wide bg-accent text-white px-4 py-1.5 rounded-full hover:bg-accent/90 transition-colors disabled:opacity-50"
+                    >
+                      {retrying ? 'Retrying…' : 'Retry AI tagging'}
+                    </button>
+                  </div>
+                ) : aiLoading ? (
                   <div className="space-y-2">
                     {/* animated "creating memory" state */}
                     <div className="flex items-center gap-2 mb-3">

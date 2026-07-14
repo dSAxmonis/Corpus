@@ -5,7 +5,7 @@ const itemSchema = new mongoose.Schema(
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     spaceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Space', default: null, index: true },
     type: { type: String, enum: ['link', 'image', 'note', 'quote'], required: true },
-    contentType: { type: String, default: '' }, // youtube, github, article, tweet, webpage etc
+    contentType: { type: String, default: '' },
     title: { type: String, trim: true },
     content: { type: String, trim: true },
     url: { type: String, trim: true },
@@ -17,29 +17,15 @@ const itemSchema = new mongoose.Schema(
     archived: { type: Boolean, default: false },
     deletedAt: { type: Date, default: null },
     status: { type: String, enum: ['ready', 'pending_ai'], default: 'ready' },
+    aiFailed: { type: Boolean, default: false }, // explicit failure flag, not inferred from timing
   },
   { timestamps: true }
 )
 
-// full text index across ALL searchable fields
 itemSchema.index({
-  title: 'text',
-  content: 'text',
-  tags: 'text',
-  summary: 'text',
-  note: 'text',
-  contentType: 'text',
-  url: 'text',
+  title: 'text', content: 'text', tags: 'text', summary: 'text', note: 'text', contentType: 'text', url: 'text',
 }, {
-  weights: {
-    title: 10,
-    tags: 8,
-    summary: 6,
-    content: 4,
-    contentType: 4,
-    note: 3,
-    url: 2,
-  },
+  weights: { title: 10, tags: 8, summary: 6, content: 4, contentType: 4, note: 3, url: 2 },
   name: 'corpus_text_index',
 })
 

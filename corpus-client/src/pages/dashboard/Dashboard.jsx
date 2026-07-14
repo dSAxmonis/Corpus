@@ -7,13 +7,11 @@ import SaveComposer from '../../components/dashboard/SaveComposer.jsx'
 import DetailPanel from '../../components/dashboard/DetailPanel.jsx'
 import NoCreditsModal from '../../components/ui/NoCreditsModal.jsx'
 import useAuthStore from '../../store/authStore.js'
-import { useNavigate } from 'react-router-dom'
 import { fetchItems, searchItems as searchItemsApi, createItem, deleteItem, uploadImage } from '../../api/items.js'
 import { getMeApi } from '../../api/auth.js'
 
 export default function Dashboard() {
   const queryClient = useQueryClient()
-  const navigate = useNavigate()
   const { setCredits } = useAuthStore()
 
   const [activeType, setActiveType] = useState('')
@@ -23,7 +21,6 @@ export default function Dashboard() {
   const [selectedItem, setSelectedItem] = useState(null)
   const [noCredits, setNoCredits] = useState(false)
 
-  // sync credits
   useQuery({
     queryKey: ['me'],
     queryFn: async () => {
@@ -35,15 +32,10 @@ export default function Dashboard() {
     staleTime: 30000,
   })
 
-  // main items query - key includes type+tag so changing either triggers a fresh fetch
   const itemsQuery = useInfiniteQuery({
     queryKey: ['items', activeType, activeTag],
     queryFn: ({ pageParam = undefined }) =>
-      fetchItems({
-        cursor: pageParam,
-        type: activeType || undefined,
-        tag: activeTag || undefined,
-      }),
+      fetchItems({ cursor: pageParam, type: activeType || undefined, tag: activeTag || undefined }),
     initialPageParam: undefined,
     getNextPageParam: (last) => last.nextCursor || undefined,
     enabled: !searchQuery,
@@ -115,7 +107,6 @@ export default function Dashboard() {
   const displayedItems = isSearching ? searchResultsQuery.data?.items || [] : allPages
   const isLoading = isSearching ? searchResultsQuery.isLoading : itemsQuery.isLoading
 
-  // collect all unique tags from loaded items
   const allTags = useMemo(() => {
     const tagSet = new Set()
     allPages.forEach(item => item.tags?.forEach(t => tagSet.add(t)))
@@ -126,7 +117,6 @@ export default function Dashboard() {
     setActiveType(val)
     setActiveTag('')
     setSearchQuery('')
-    // remove the old cached page data so the new query fetches fresh
     queryClient.removeQueries({ queryKey: ['items'] })
   }
 
@@ -138,39 +128,54 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex min-h-screen bg-paper">
-      <Sidebar
-        activeType={activeType}
-        onTypeChange={handleTypeChange}
-        activeTag={activeTag}
-        onTagChange={handleTagChange}
+    <div className="min-h-screen bg-paper relative">
+      {/* ambient lighting gradient — fixed, sits behind everything */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0"
+        style={{
+          background:
+            'radial-gradient(ellipse 900px 500px at 12% -8%, rgba(46,91,255,0.09), transparent 60%), ' +
+            'radial-gradient(ellipse 700px 550px at 100% 5%, rgba(124,58,237,0.06), transparent 55%), ' +
+            'radial-gradient(ellipse 600px 400px at 50% 100%, rgba(56,189,248,0.05), transparent 60%)',
+        }}
       />
+      {/* dotted grid overlay */}
+      <div className="pointer-events-none fixed inset-0 z-0 corpus-dot-grid opacity-70" />
 
-      <div className="flex-1 min-w-0">
-        <Topbar
-          onSearch={useCallback(q => setSearchQuery(q), [])}
-          onClearSearch={useCallback(() => setSearchQuery(''), [])}
-          onOpenComposer={() => setIsComposerOpen(true)}
-          allTags={allTags}
+      <div className="flex relative z-10">
+        <Sidebar
+          activeType={activeType}
+          onTypeChange={handleTypeChange}
           activeTag={activeTag}
           onTagChange={handleTagChange}
         />
 
-        <main className="px-6 md:px-10 py-8">
-          {isSearching && (
-            <p className="font-mono text-[11px] uppercase tracking-wider text-muted mb-5">
-              {displayedItems.length} result{displayedItems.length !== 1 ? 's' : ''} for "{searchQuery}"
-            </p>
-          )}
-          <MasonryGrid
-            items={displayedItems}
-            onCardClick={setSelectedItem}
-            onDelete={id => deleteMutation.mutate(id)}
-            onLoadMore={() => itemsQuery.fetchNextPage()}
-            hasMore={!isSearching && itemsQuery.hasNextPage}
-            isLoading={isLoading}
+        <div className="flex-1 min-w-0">
+          <Topbar
+            onSearch={useCallback(q => setSearchQuery(q), [])}
+            onClearSearch={useCallback(() => setSearchQuery(''), [])}
+            onOpenComposer={() => setIsComposerOpen(true)}
+            allTags={allTags}
+            activeTag={activeTag}
+            onTagChange={handleTagChange}
           />
-        </main>
+
+          <main className="px-5 md:px-8 py-6">
+            {isSearching && (
+              <p className="font-mono text-[11px] uppercase tracking-wider text-muted mb-4">
+                {displayedItems.length} result{displayedItems.length !== 1 ? 's' : ''} for "{searchQuery}"
+              </p>
+            )}
+            <MasonryGrid
+              items={displayedItems}
+              onCardClick={setSelectedItem}
+              onDelete={id => deleteMutation.mutate(id)}
+              onLoadMore={() => itemsQuery.fetchNextPage()}
+              hasMore={!isSearching && itemsQuery.hasNextPage}
+              isLoading={isLoading}
+            />
+          </main>
+        </div>
       </div>
 
       <SaveComposer

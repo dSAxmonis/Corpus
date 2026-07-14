@@ -43,3 +43,8 @@ export async function fetchDriftItems(limit = 20) {
   const { data } = await api.get('/items/drift', { params: { limit } })
   return data
 }
+
+export async function retryItemAI(id) {
+  const { data } = await api.post(`/items/${id}/retry-ai`)
+  return data
+}

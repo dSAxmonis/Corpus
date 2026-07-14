@@ -1,5 +1,3 @@
-// 
-
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { z } from 'zod'
@@ -11,11 +9,18 @@ function generateAccessToken(userId) {
 function generateRefreshToken(userId) {
   return jwt.sign({ id: userId }, process.env.REFRESH_SECRET, { expiresIn: '7d' })
 }
+
+// ── THE CRITICAL FIX ──
+// In production, frontend (vercel.app) and backend (onrender.com) are
+// different domains, so this is a cross-site request. Cookies only survive
+// cross-site requests if sameSite is 'none' AND secure is true. Locally,
+// both are on localhost so 'lax' + not-secure works fine.
 function setRefreshCookie(res, token) {
+  const isProd = process.env.NODE_ENV === 'production'
   res.cookie('refreshToken', token, {
     httpOnly: true,
-    secure: false,
-    sameSite: 'lax',
+    secure: isProd,                    // must be true when sameSite is 'none'
+    sameSite: isProd ? 'none' : 'lax',  // 'none' required for cross-site cookies
     maxAge: 7 * 24 * 60 * 60 * 1000,
   })
 }
@@ -105,7 +110,12 @@ export async function logout(req, res) {
       await User.findByIdAndUpdate(decoded.id, { $pull: { refreshTokens: token } })
     } catch {}
   }
-  res.clearCookie('refreshToken')
+  const isProd = process.env.NODE_ENV === 'production'
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+  })
   return res.json({ success: true })
 }
 

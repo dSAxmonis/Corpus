@@ -26,7 +26,7 @@ export default function MasonryGrid({ items, onCardClick, onDelete, onLoadMore, 
 
   return (
     <div>
-      <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 [column-fill:_balance]">
+      <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-3 [column-fill:_balance]">
         <AnimatePresence mode="popLayout">
           {items.map(item => (
             <ItemCard key={item._id} item={item} onClick={onCardClick} onDelete={onDelete} />
